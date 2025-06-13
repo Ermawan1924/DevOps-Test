@@ -1,0 +1,33 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Build Docker image
+        run: docker build -t myapp .
+
+      - name: Run tests
+        run: docker run --rm myapp npm test
+
+      - name: Deploy to RHEL Lab
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.RHEL_HOST }}
+          username: ${{ secrets.RHEL_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd /home/username/app
+            git pull
+            docker-compose down
+            docker-compose up -d --build
+
