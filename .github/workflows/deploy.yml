@@ -13,11 +13,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Build Docker image
-        run: docker build -t myapp .
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
 
       - name: Run tests
-        run: docker run --rm myapp npm test
+        run: npm test
+
+      - name: Pull latest code from GitHub using SSH
+        run: git pull origin main
 
       - name: Deploy to RHEL Lab
         uses: appleboy/ssh-action@master
@@ -30,3 +35,4 @@ jobs:
             git pull
             docker-compose down
             docker-compose up -d --build
+
