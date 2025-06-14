@@ -3,36 +3,45 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - '**'
+      - '**'  # Trigger pipeline setiap kali ada push ke branch manapun
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # Menentukan runner yang digunakan untuk menjalankan job
 
     steps:
+      # Step 1: Checkout repository
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2  # Mengambil kode dari repositori GitHub
 
+      # Step 2: Setup SSH key untuk koneksi ke server RHEL
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.5.3
         with:
-          ssh-private-key: ${{ secrets.SSH_KEY }}
+          ssh-private-key: ${{ secrets.SSH_KEY }}  # Menggunakan private key dari GitHub Secrets
 
+      # Step 3: Build Docker image
+      - name: Build Docker image
+        run: docker build -t myapp .
+
+      # Step 4: Run tests
       - name: Run tests
         run: npm test
 
+      # Step 5: Pull the latest code from GitHub using SSH (Optional)
       - name: Pull latest code from GitHub using SSH
-        run: git pull origin main
+        run: git pull origin main  # Menggunakan SSH untuk koneksi GitHub
 
+      # Step 6: Deploy to RHEL Lab
       - name: Deploy to RHEL Lab
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.RHEL_HOST }}
-          username: ${{ secrets.RHEL_USER }}
-          key: ${{ secrets.SSH_KEY }}
+          host: ${{ secrets.RHEL_HOST }}  # Menggunakan GitHub Secret RHEL_HOST (IP atau hostname server RHEL)
+          username: ${{ secrets.RHEL_USER }}  # Menggunakan GitHub Secret RHEL_USER (username SSH di server RHEL)
+          key: ${{ secrets.SSH_KEY }}  # Menggunakan GitHub Secret SSH_KEY (private key untuk autentikasi)
           script: |
-            cd /home/username/app
-            git pull
-            docker-compose down
-            docker-compose up -d --build
+            cd /home/username/app  # Ganti dengan path direktori aplikasi kamu di server RHEL
+            git pull  # Menarik perubahan terbaru dari repositori GitHub
+            docker-compose down  # Menghentikan kontainer yang sedang berjalan
+            docker-compose up -d --build  # Menjalankan ulang kontainer dengan build ulang image
 
